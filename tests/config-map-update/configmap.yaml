@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alpine-demo
+data:
+  # key-value (simple) properties
+  sleep.time: "600"
+
+  sleep_time: "600"
+
+  # file-like keys
+  demp.properties: |
+    sleep.time=600
+    ready.message=I am ready again!
