@@ -4,4 +4,6 @@ resources:
   - deployment.yaml
   - configmap.yaml
   - svc.yaml
-  - rbac.yaml
+  - sa.yaml
+  - cr.yaml
+  - crb.yaml
