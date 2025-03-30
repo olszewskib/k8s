@@ -2,7 +2,6 @@ apiVestion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
-  annotations:
 spec:
   rules:
   - http:
