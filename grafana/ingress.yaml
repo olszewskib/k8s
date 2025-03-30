@@ -4,12 +4,4 @@ metadata:
   name: grafana-ingress
 spec:
   rules:
-  - http:
-    paths:
-    - path: /
-      pathType: Prefix
-      backend:
-        service:
-          name: grafana
-          port:
-            number: 3000
+  - {}
