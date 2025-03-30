@@ -4,7 +4,8 @@ metadata:
   name: grafana-ingress
 spec:
   rules:
-  - http:
+  - host: grafana.olszewskib.org
+    http:
       paths:
       - path: /
         pathType: Prefix
