@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: 2on-frontend
+spec:
+  selector:
+    app: 2on-frontend
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+  type: ClusterIP
+
