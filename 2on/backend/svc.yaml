@@ -4,10 +4,9 @@ metadata:
   name: backend
 spec:
   selector:
-    app: 2on-backend
+    app: backend
   ports:
   - port: 8080
     targetPort: 8080
     name: http
   type: ClusterIP
-
