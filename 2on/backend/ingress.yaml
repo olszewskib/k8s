@@ -4,10 +4,10 @@ metadata:
   name: backend
 spec:
   rules:
-  - host: api.olszewskib.org
+  - host: 2on.olszewskib.org
     http:
       paths:
-      - path: /
+      - path: /api
         pathType: Prefix
         backend:
           service:
