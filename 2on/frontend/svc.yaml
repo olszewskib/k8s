@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: 2on-frontend
+  name: frontend
 spec:
   selector:
     app: 2on-frontend
