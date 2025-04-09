@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 2oa-frontend
+  labels:
+    app: 2oa-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: 2oa-frontend
+  template:
+    metadata:
+      labels:
+        app: 2oa-frontend
+    spec:
+      containers:
+        - name: 2oa-frontend
+          image: olszewskib/2oa-frontend:v0.0.0
+          ports:
+            - containerPort: 8080
