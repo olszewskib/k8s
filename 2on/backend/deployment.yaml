@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 2on-backend
+  labels:
+    app: 2on-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: 2on-backend
+  template:
+    metadata:
+      labels:
+        app: 2on-backend
+    spec:
+      containers:
+        - name: 2on-backend
+          image: olszewskib/2on-backend:v1.0.0
+          ports:
+            - containerPort: 8080
