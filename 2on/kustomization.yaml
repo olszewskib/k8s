@@ -6,3 +6,4 @@ resources:
   - ./backend
   - ./frontend
   - ingress.yaml
+  - ../redis/
