@@ -3,7 +3,14 @@ kind: Ingress
 metadata:
   name: vault-ingress
   namespace: vault
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod-cloudflare
+    kubernetes.io/ingress.class: traefik
 spec:
+  tls:
+  - hosts:
+    - vault.olszewskib.org
+    secretName: vault-tls
   rules:
   - host: vault.olszewskib.org
     http:
