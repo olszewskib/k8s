@@ -2,7 +2,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod-cloudflare
+    kubernetes.io/ingress.class: traefik
 spec:
+  tls:
+  - hosts:
+    - 2on.olszewskib.org
+    secretName: vault-tls
   rules:
   - host: 2on.olszewskib.org
     http:
