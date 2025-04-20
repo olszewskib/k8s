@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: olszewskib/2on-frontend:v1.0.6
+          image: olszewskib/2on-frontend:v1.1.0-rc1
           ports:
             - containerPort: 8080
