@@ -9,7 +9,7 @@ spec:
   tls:
   - hosts:
     - 2on.olszewskib.org
-    secretName: vault-tls
+    secretName: 2on-tls
   rules:
   - host: 2on.olszewskib.org
     http:
