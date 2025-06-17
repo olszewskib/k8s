@@ -25,13 +25,9 @@ spec:
             limits:
               amd.com/gpu: "1"
           volumeMounts:
-            - name: kfd
-              mountPath: /dev/kfd
             - name: ollama-data
               mountPath: /root/.ollama
       volumes:
-        - name: kfd
-          hostPath: /dev/kfd
         - name: ollama-data
           persistentVolumeClaim:
             claimName: ollama-data
