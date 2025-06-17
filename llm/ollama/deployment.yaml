@@ -12,17 +12,11 @@ spec:
       labels:
         app: ollama 
     spec:
-      initContainers:
-        - name: pull-gemma3
-          image: ollama/ollama:0.9.2-rocm
-          command: ["ollama", "pull", "gemma3:4b"]
-          volumeMounts:
-            - name: ollama-data
-              mountPath: /root/.ollama
       containers:
         - name: ollama
-          image: ollama/ollama:0.9.2-rocm
-          args: ["serve", "--model", "gemma3:4b"]
+          image: ollama/ollama:rocm
+          securityContext:
+            privileged: true
           ports:
             - containerPort: 11434
           resources:
@@ -31,8 +25,13 @@ spec:
             limits:
               amd.com/gpu: "1"
           volumeMounts:
+            - name: kfd
+              mountPath: /dev/kfd
             - name: ollama-data
               mountPath: /root/.ollama
       volumes:
-      - name: ollama-data 
-        emptyDir: {}
+        - name: kfd
+          hostPath: /dev/kfd
+        - name: ollama-data
+          persistentVolumeClaim:
+            claimName: ollama-data
