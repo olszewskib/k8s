@@ -3,14 +3,23 @@
 grafana:
   ingress:
     enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod-cloudflare
     hosts:
       - grafana.olszewskib.org
     path: /
     pathType: Prefix
+    tls:
+      - hosts:
+        - grafana.olszewskib.org
+        secretName: grafana-tls
+
 
 prometheus:
   ingress:
     enabled: true
+    ingressClassName: traefik
     hosts:
       - prometheus.olszewskib.org
     paths:
