@@ -1,0 +1,11 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth-grafana
+spec:
+  method: kubernetes
+  mount: kubernetes
+  vaultConnectionRef: vault-connection
+  kubernetes:
+    role: grafana
+    serviceAccount: grafana-sa
