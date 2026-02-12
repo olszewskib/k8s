@@ -1,6 +1,10 @@
 # values.yaml
 
 grafana:
+  admin:
+    existingSecret: grafana-admin-credentials
+    userKey: username
+    passwordKey: password
   ingress:
     enabled: true
     ingressClassName: traefik
