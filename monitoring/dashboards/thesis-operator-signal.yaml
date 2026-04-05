@@ -1,0 +1,223 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-thesis-operator
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  thesis-operator-signal.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 20,
+          "title": "Operator Decisions — Agent Trace (requires Loki)",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "fieldConfig": { "defaults": {}, "overrides": [] },
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 1 },
+          "id": 1,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Ascending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+              "expr": "{namespace=\"thesis-autoscaler\", app_kubernetes_io_component=\"operator\"} |= \"\"",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Operator Logs — Agent Trace",
+          "description": "Shows the full multi-step agent reasoning loop: get_signal_history → get_current_replicas → scale_deployment/hold. Requires Loki to be deployed and configured as a Grafana datasource. Until then this panel shows No data.",
+          "type": "logs"
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "fieldConfig": { "defaults": {}, "overrides": [] },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+          "id": 2,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": false,
+            "showTime": true,
+            "sortOrder": "Ascending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+              "expr": "{namespace=\"thesis-autoscaler\", app_kubernetes_io_component=\"operator\"} |= \"action=\"",
+              "legendFormat": "",
+              "refId": "A"
+            }
+          ],
+          "title": "Operator Decision Events (action= lines only)",
+          "description": "Filtered view showing only lines containing 'action=' — the final ScaleUp/ScaleDown/Hold decisions. Easier to read for thesis screenshots than the full trace log.",
+          "type": "logs"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+          "id": 21,
+          "title": "Social Signal Velocity — requires operator metrics",
+          "type": "row"
+        },
+        {
+          "content": "## Social Signal Panels — Not Yet Available\n\nThese panels require the operator to expose Prometheus metrics. Currently the operator logs decisions to stdout only.\n\n### To enable these panels, add to `operator/main.go`:\n\n```go\nimport \"github.com/prometheus/client_golang/prometheus/promhttp\"\n\nhttp.Handle(\"/metrics\", promhttp.Handler())\n```\n\n### Suggested metrics to expose:\n\n| Metric | Type | Labels |\n|--------|------|--------|\n| `social_autoscaler_signal_velocity` | Gauge | `policy` |\n| `social_autoscaler_signal_mentions` | Gauge | `policy` |\n| `social_autoscaler_scaling_decision_total` | Counter | `policy`, `action` |\n| `social_autoscaler_confidence` | Gauge | `policy` |\n\nOnce these exist, replace this panel with timeseries panels using those metric names.",
+          "datasource": { "type": "datasource", "uid": "grafana" },
+          "fieldConfig": { "defaults": {}, "overrides": [] },
+          "gridPos": { "h": 10, "w": 12, "x": 0, "y": 22 },
+          "id": 3,
+          "options": { "code": { "language": "plaintext", "showLineNumbers": false }, "mode": "markdown" },
+          "title": "Signal Velocity — Setup Required",
+          "type": "text"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2, "fillOpacity": 5 },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 10, "w": 12, "x": 12, "y": 22 },
+          "id": 4,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "kube_deployment_status_replicas{namespace=\"thesis-autoscaler\",deployment=\"workload-app\"}",
+              "legendFormat": "Replicas (correlation anchor)",
+              "refId": "A"
+            }
+          ],
+          "title": "Replica Count — for signal correlation",
+          "description": "Replica count shown here so it can be visually correlated with signal velocity once the operator exposes metrics. Use Grafana's shared crosshair (graphTooltip=1) to line up events across panels.",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+          "id": 22,
+          "title": "Operator Pod Health",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1 },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 0, "y": 33 },
+          "id": 5,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"thesis-autoscaler\",container=\"operator\"}[$__rate_interval])) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Operator CPU Usage",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1 },
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 7, "w": 12, "x": 12, "y": 33 },
+          "id": 6,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"thesis-autoscaler\",container=\"operator\"}) by (pod)",
+              "legendFormat": "{{pod}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Operator Memory Usage",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["thesis", "operator", "agent"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "type": "datasource",
+            "label": "Prometheus"
+          },
+          {
+            "current": {},
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "loki_datasource",
+            "options": [],
+            "query": "loki",
+            "refresh": 1,
+            "type": "datasource",
+            "label": "Loki"
+          }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Thesis — Operator & Signal",
+      "uid": "thesis-operator-signal",
+      "version": 1
+    }
