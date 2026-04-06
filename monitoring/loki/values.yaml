@@ -1,0 +1,91 @@
+# Loki — Single Binary deployment for k3s homelab
+#
+# Chart: grafana/loki  version: 9.5.13
+# Namespace: monitoring
+#
+# Single Binary mode runs the entire Loki stack (ingester, querier, distributor)
+# in one pod. Zero operational overhead, plenty for experiment-scale log volumes.
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false   # no multi-tenancy — homelab only
+
+  commonConfig:
+    replication_factor: 1   # single replica, no HA needed
+
+  # Filesystem storage — logs land on the local-path PVC below.
+  # No S3 / GCS / MinIO required.
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
+  limits_config:
+    retention_period: 30d       # keep 30 days of logs
+    ingestion_rate_mb: 16       # generous for experiment bursts
+    ingestion_burst_size_mb: 32
+    max_query_series: 10000
+
+  compactor:
+    retention_enabled: true
+    retention_delete_delay: 2h
+    working_directory: /var/loki/compactor
+
+# ── Single Binary pod ────────────────────────────────────────────────────────
+
+singleBinary:
+  replicas: 1
+
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 10Gi         # enough for 30 days of thesis-scale pod logs
+    accessModes:
+      - ReadWriteOnce
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ── Disable all distributed / scalable components ───────────────────────────
+# These are only needed for the SimpleScalable / Distributed deployment modes.
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+backend:
+  replicas: 0
+
+# ── Disable bundled gateway and MinIO ────────────────────────────────────────
+# The gateway (nginx) is for multi-tenant or load-balanced setups.
+# MinIO is for object storage — we use local filesystem instead.
+
+gateway:
+  enabled: false
+
+minio:
+  enabled: false
+
+# ── Disable test pod ─────────────────────────────────────────────────────────
+
+test:
+  enabled: false
+
+lokiCanary:
+  enabled: false
