@@ -39,6 +39,20 @@ grafana:
       enabled: true
       org_role: Viewer
 
+  # Loki datasource — provisioned at Grafana startup, survives restarts.
+  # Loki must be deployed first (monitoring/loki/application.yaml).
+  # The URL targets the single binary service directly (no gateway).
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      uid: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
+      jsonData:
+        maxLines: 1000
+        timeout: 60
+
 
 prometheus:
   ingress:
