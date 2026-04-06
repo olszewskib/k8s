@@ -39,6 +39,7 @@ loki:
     retention_enabled: true
     retention_delete_delay: 2h
     working_directory: /var/loki/compactor
+    delete_request_store: filesystem
 
 # ── Single Binary pod ────────────────────────────────────────────────────────
 
