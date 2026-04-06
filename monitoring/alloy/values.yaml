@@ -1,0 +1,183 @@
+# Grafana Alloy — log collector for k3s homelab
+#
+# Chart: grafana/alloy  (grafana.github.io/helm-charts)
+# Namespace: monitoring
+#
+# Alloy is the successor to Promtail and Grafana Agent.
+# It uses the River configuration language (declarative, typed pipelines).
+#
+# This config collects pod logs via the Kubernetes API (loki.source.kubernetes),
+# processes them through a CRI parsing + noise-drop pipeline, and ships to Loki.
+# No host filesystem mounts required — cleaner than the old Promtail DaemonSet approach.
+
+# ── Alloy River configuration ─────────────────────────────────────────────────
+
+alloy:
+  configMap:
+    create: true
+    content: |
+      // ── Pod discovery ──────────────────────────────────────────────────────
+      // Watch all pods in the cluster so Alloy knows what to tail.
+
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // ── Metadata relabelling ───────────────────────────────────────────────
+      // Promote the most useful Kubernetes labels into Loki stream labels.
+      // Keep cardinality low: use namespace/pod/container/app/component only.
+      // Anything finer-grained belongs in LogQL line filters, not stream labels.
+
+      discovery.relabel "pod_logs" {
+        targets = discovery.kubernetes.pods.targets
+
+        // Drop pods that are not actively running (reduces noise from evicted /
+        // completed Jobs and init containers that have already finished).
+        rule {
+          source_labels = ["__meta_kubernetes_pod_phase"]
+          regex         = "Pending|Succeeded|Failed|Completed|Unknown"
+          action        = "drop"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_container_name"]
+          target_label  = "container"
+        }
+
+        rule {
+          source_labels = ["__meta_kubernetes_pod_node_name"]
+          target_label  = "node"
+        }
+
+        // app.kubernetes.io/name → app label (e.g. "social-autoscaler")
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+          target_label  = "app"
+        }
+
+        // app.kubernetes.io/component → component label (e.g. "operator")
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_component"]
+          target_label  = "component"
+        }
+      }
+
+      // ── Log collection via Kubernetes API ─────────────────────────────────
+      // loki.source.kubernetes streams logs from the kubelet API.
+      // This is the modern Alloy approach — no DaemonSet, no hostPath mounts.
+
+      loki.source.kubernetes "pod_logs" {
+        targets    = discovery.relabel.pod_logs.output
+        forward_to = [loki.process.pipeline.receiver]
+      }
+
+      // ── Processing pipeline ────────────────────────────────────────────────
+
+      loki.process "pipeline" {
+        // Parse containerd / CRI log format produced by k3s.
+        // Splits the raw line into timestamp, stream (stdout/stderr), and message.
+        stage.cri {}
+
+        // Drop readiness / liveness probe spam — these fire every few seconds
+        // and make it hard to find real operator and workload-app log lines.
+        stage.drop {
+          expression          = ".*GET /healthz.*"
+          drop_counter_reason = "healthcheck_probe"
+        }
+
+        stage.drop {
+          expression          = ".*GET /readyz.*"
+          drop_counter_reason = "readycheck_probe"
+        }
+
+        forward_to = [loki.write.default.receiver]
+      }
+
+      // ── Push to Loki ───────────────────────────────────────────────────────
+      // Single Binary Loki is in the same namespace — no gateway, direct push.
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+
+          // Retry config — important for surviving Loki restarts during experiments.
+          min_backoff_period  = "500ms"
+          max_backoff_period  = "30s"
+          max_backoff_retries = 10
+        }
+
+        // Cluster label is added to every log line — useful if you ever have
+        // multiple clusters shipping to the same Loki instance.
+        external_labels = {
+          cluster = "homelab-k3s",
+        }
+      }
+
+  # Clustering is only needed when running multiple Alloy replicas.
+  clustering:
+    enabled: false
+
+# ── Controller ────────────────────────────────────────────────────────────────
+# loki.source.kubernetes uses the Kubernetes API so a single Deployment replica
+# covers the whole cluster — no DaemonSet overhead.
+
+controller:
+  type: "deployment"
+  replicas: 1
+
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# ── RBAC ─────────────────────────────────────────────────────────────────────
+# The chart creates a ClusterRole with base Kubernetes discovery rules.
+# loki.source.kubernetes additionally needs pods/log (kubelet log streaming).
+
+rbac:
+  create: true
+
+crb:
+  annotations: {}
+
+# Extra rule for pods/log — not in the chart's default ClusterRole.
+# This is what allows loki.source.kubernetes to stream log lines.
+extraRbacRules:
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]
+
+serviceAccount:
+  create: true
+
+# ── Resource limits ───────────────────────────────────────────────────────────
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# ── Self-observability ────────────────────────────────────────────────────────
+# Let Prometheus scrape Alloy itself so you can see its log ingestion rate
+# and any pipeline errors in Grafana.
+
+serviceMonitor:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
