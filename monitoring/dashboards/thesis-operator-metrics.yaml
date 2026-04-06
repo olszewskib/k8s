@@ -1,0 +1,306 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-thesis-operator-metrics
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  thesis-operator-metrics.json: |
+    {
+      "annotations": { "list": [] },
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 40,
+          "title": "Social Signal",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2, "fillOpacity": 8 },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 1 },
+          "id": 1,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "social_autoscaler_signal_velocity",
+              "legendFormat": "Velocity — {{scenario}} ({{policy}})",
+              "refId": "A"
+            }
+          ],
+          "title": "Social Signal Velocity (mentions/min)",
+          "description": "The key input to the operator decision loop. Flat≈1, pre-spike≈38, spike≈320, DDoS≈290. Screenshot during the spike scenario for exp_signal_velocity_panel.png.",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1, "fillOpacity": 5 },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 1 },
+          "id": 2,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "social_autoscaler_signal_mentions",
+              "legendFormat": "Mentions — {{scenario}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Social Signal Mention Count",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+          "id": 41,
+          "title": "Operator Decisions",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2, "fillOpacity": 5 },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": [
+              {
+                "matcher": { "id": "byRegexp", "options": ".*ScaleUp.*" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byRegexp", "options": ".*ScaleDown.*" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }]
+              },
+              {
+                "matcher": { "id": "byRegexp", "options": ".*Hold.*" },
+                "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }]
+              }
+            ]
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+          "id": 3,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "sum(rate(social_autoscaler_scaling_decisions_total[$__rate_interval])) by (action, source)",
+              "legendFormat": "{{action}} — {{source}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Decision Rate by Action & Source",
+          "description": "Green=ScaleUp, Blue=ScaleDown, Orange=Hold. The 'source' label distinguishes rule-based from agent decisions — key for the M2 vs M3 comparison in thesis §4.3.",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2 },
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+          "id": 4,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "social_autoscaler_confidence",
+              "legendFormat": "Confidence — {{policy}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Decision Confidence",
+          "description": "Always 1.0 for the agent path (deliberate tool-use). Varies for rule-based path depending on distance from threshold. Drops trigger LLM fallback at the confidenceThreshold.",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+          "id": 42,
+          "title": "Scaling Outcome & Correlation",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2, "fillOpacity": 5 },
+              "unit": "short",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 20 },
+          "id": 5,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "social_autoscaler_desired_replicas",
+              "legendFormat": "Operator desired — {{deployment}}",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "kube_deployment_status_replicas_available{namespace=\"thesis-autoscaler\",deployment=\"workload-app\"}",
+              "legendFormat": "Actually available",
+              "refId": "B"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "social_autoscaler_signal_velocity / 10",
+              "legendFormat": "Signal velocity ÷10 (scale reference)",
+              "refId": "C"
+            }
+          ],
+          "title": "Operator Desired vs Available Replicas + Signal Velocity",
+          "description": "The gap between 'operator desired' and 'actually available' is time-to-readiness — a core thesis KPI. The signal velocity overlay shows the trigger. Screenshot this for exp_signal_velocity_panel.png.",
+          "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 29 },
+          "id": 43,
+          "title": "LLM Agent Behaviour",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 1, "fillOpacity": 3 },
+              "unit": "short",
+              "min": 1,
+              "max": 5
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+          "id": 6,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.50, sum(rate(social_autoscaler_agent_steps_bucket[$__rate_interval])) by (le, policy))",
+              "legendFormat": "Median steps — {{policy}}",
+              "refId": "A"
+            }
+          ],
+          "title": "Agent Tool-Use Steps per Decision",
+          "description": "Values consistently above 1 prove the multi-step reasoning loop. A decision that calls get_signal_history → get_current_replicas → scale_deployment = 3 steps. This metric is direct evidence for the 'Agentic' thesis claim.",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "lineWidth": 2, "fillOpacity": 5 },
+              "unit": "s",
+              "min": 0
+            },
+            "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+          "id": 7,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.95, sum(rate(social_autoscaler_reconcile_duration_seconds_bucket[$__rate_interval])) by (le, policy))",
+              "legendFormat": "P95 reconcile — {{policy}}",
+              "refId": "A"
+            },
+            {
+              "datasource": { "type": "prometheus", "uid": "${datasource}" },
+              "expr": "histogram_quantile(0.50, sum(rate(social_autoscaler_reconcile_duration_seconds_bucket[$__rate_interval])) by (le, policy))",
+              "legendFormat": "P50 reconcile — {{policy}}",
+              "refId": "B"
+            }
+          ],
+          "title": "Reconcile Loop Duration (P50 / P95)",
+          "description": "Rule-based reconciles in <10ms. LLM-enabled reconciles add network latency to the LLM endpoint. Spikes here are the Failure Mode documented in thesis §4.4.",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "15s",
+      "schemaVersion": 38,
+      "tags": ["thesis", "operator", "agent", "signal"],
+      "templating": {
+        "list": [
+          {
+            "current": {},
+            "hide": 0,
+            "includeAll": false,
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "type": "datasource",
+            "label": "Prometheus"
+          }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Thesis — Operator Metrics & Signal",
+      "uid": "thesis-operator-metrics",
+      "version": 1
+    }

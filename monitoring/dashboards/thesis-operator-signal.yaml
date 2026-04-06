@@ -22,7 +22,7 @@ data:
           "type": "row"
         },
         {
-          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "datasource": { "type": "loki", "uid": "loki" },
           "fieldConfig": { "defaults": {}, "overrides": [] },
           "gridPos": { "h": 12, "w": 24, "x": 0, "y": 1 },
           "id": 1,
@@ -38,7 +38,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+              "datasource": { "type": "loki", "uid": "loki" },
               "expr": "{namespace=\"thesis-autoscaler\", app_kubernetes_io_component=\"operator\"} |= \"\"",
               "legendFormat": "",
               "refId": "A"
@@ -49,7 +49,7 @@ data:
           "type": "logs"
         },
         {
-          "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+          "datasource": { "type": "loki", "uid": "loki" },
           "fieldConfig": { "defaults": {}, "overrides": [] },
           "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
           "id": 2,
@@ -65,7 +65,7 @@ data:
           },
           "targets": [
             {
-              "datasource": { "type": "loki", "uid": "${loki_datasource}" },
+              "datasource": { "type": "loki", "uid": "loki" },
               "expr": "{namespace=\"thesis-autoscaler\", app_kubernetes_io_component=\"operator\"} |= \"action=\"",
               "legendFormat": "",
               "refId": "A"
@@ -200,18 +200,6 @@ data:
             "type": "datasource",
             "label": "Prometheus"
           },
-          {
-            "current": {},
-            "hide": 0,
-            "includeAll": false,
-            "multi": false,
-            "name": "loki_datasource",
-            "options": [],
-            "query": "loki",
-            "refresh": 1,
-            "type": "datasource",
-            "label": "Loki"
-          }
         ]
       },
       "time": { "from": "now-1h", "to": "now" },
